@@ -42,6 +42,8 @@
   --accent-soft: rgba(94, 168, 255, 0.14);
   --warm:        #F0A35A;
   --ok:          #3FBF6E;
+  --glow:        rgba(94, 168, 255, 0.22);
+  --grid:        rgba(233, 237, 245, 0.045);
   --shadow:  0 1px 2px rgba(0,0,0,.5), 0 18px 46px -20px rgba(0,0,0,.85);
 
   --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, system-ui, sans-serif;
@@ -66,6 +68,8 @@
     --accent-soft: rgba(31, 111, 214, 0.10);
     --warm:        #B86A1C;
     --ok:          #1E8A4A;
+    --glow:        rgba(31, 111, 214, 0.16);
+    --grid:        rgba(18, 22, 31, 0.06);
     --shadow:  0 1px 2px rgba(20,30,50,.06), 0 14px 36px -18px rgba(20,30,50,.3);
   }
 }
@@ -74,6 +78,11 @@
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { margin:0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size:17px; line-height:1.6; -webkit-font-smoothing: antialiased; }
+
+/* the sky: one soft glow and a faint grid, both fixed so they never move with content */
+.sky { position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; }
+.sky::before { content:""; position:absolute; left:50%; top:-28rem; width:80rem; height:56rem; transform:translateX(-50%); background: radial-gradient(closest-side, var(--glow) 0%, transparent 70%); }
+.sky::after { content:""; position:absolute; inset:0; background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 4rem 4rem; mask-image: linear-gradient(to bottom, rgba(0,0,0,.7), transparent 60rem); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.7), transparent 60rem); }
 h1,h2,h3 { margin:0; font-weight:600; letter-spacing:-.028em; text-wrap:balance; }
 p { margin:0; text-wrap:pretty; }
 a { color:inherit; text-underline-offset:.18em; }
@@ -84,28 +93,60 @@ a { color:inherit; text-underline-offset:.18em; }
 
 .shell { width:min(100% - 2*var(--gutter), 68rem); margin-inline:auto; }
 
-.masthead { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1.1rem 0; }
+.top { position:sticky; top:0; z-index:10; background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: saturate(140%) blur(14px); -webkit-backdrop-filter: saturate(140%) blur(14px); border-bottom:1px solid transparent; transition: border-color .2s; }
+.top.scrolled { border-bottom-color: var(--rule); }
+.masthead { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.85rem 0; }
 .wordmark { display:inline-flex; align-items:center; gap:.55rem; font-weight:700; letter-spacing:-.02em; text-decoration:none; font-size:1.05rem; }
 .wordmark svg { width:1.35rem; height:1.35rem; }
+.wordmark img { width:1.5rem; height:1.5rem; border-radius:.35rem; }
+.masthead nav .gh { display:inline-flex; align-items:center; gap:.35rem; padding:.3rem .65rem; border:1px solid var(--rule-2); border-radius:.5rem; color:var(--ink); }
+.masthead nav .gh svg { width:.95rem; height:.95rem; }
 .masthead nav { display:flex; gap:1.2rem; font-size:.92rem; color:var(--ink-2); }
 .masthead nav a { text-decoration:none; }
 .masthead nav a:hover { color:var(--ink); }
 @media (max-width: 40rem) { .masthead nav { display:none; } }
 
-.hero { padding: clamp(2rem, 6vw, 4.5rem) 0 2rem; max-width: 42rem; }
+.hero { padding: clamp(3rem, 8vw, 6rem) 0 1.5rem; max-width: 46rem; margin-inline:auto; text-align:center; display:flex; flex-direction:column; align-items:center; }
+.hero .icon { width: clamp(72px, 10vw, 104px); height:auto; border-radius: 22.5%; box-shadow: 0 18px 40px -16px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06) inset; margin-bottom:1.4rem; }
 .eyebrow { font-family: var(--mono); font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin-bottom:.9rem; }
-h1 { font-size: clamp(2.1rem, 5.2vw, 3.6rem); line-height:1.05; }
-h1 em { font-style:normal; color:var(--accent); }
-.hero-lede { margin-top:1.2rem; font-size:1.12rem; color:var(--ink-2); max-width: var(--measure); }
-.hero-actions { display:flex; flex-wrap:wrap; gap:.7rem; margin-top:1.6rem; }
-.button { display:inline-flex; align-items:center; gap:.5rem; padding:.7rem 1.05rem; border-radius:.6rem; font-weight:600; font-size:.95rem; text-decoration:none; border:1px solid var(--rule-2); transition: transform .18s var(--ease), background .18s var(--ease); }
+.release { display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono); font-size:.76rem; letter-spacing:.04em; color:var(--ink-2); background:var(--surface); border:1px solid var(--rule-2); border-radius:99px; padding:.3rem .8rem .3rem .5rem; margin-bottom:1.2rem; text-decoration:none; }
+.release i { width:.5rem; height:.5rem; border-radius:50%; background:var(--ok); box-shadow:0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+h1 { font-size: clamp(2.5rem, 6.4vw, 4.6rem); line-height:1.02; letter-spacing:-.035em; }
+h1 em { font-style:normal; color:var(--accent); background: linear-gradient(100deg, var(--accent), color-mix(in srgb, var(--accent) 60%, white) 60%, var(--accent)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.hero-lede { margin-top:1.3rem; font-size:1.18rem; color:var(--ink-2); max-width: 36rem; }
+.hero-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:.7rem; margin-top:1.8rem; }
+.button { display:inline-flex; align-items:center; gap:.5rem; padding:.8rem 1.2rem; border-radius:.7rem; font-weight:600; font-size:.98rem; text-decoration:none; border:1px solid var(--rule-2); transition: transform .18s var(--ease), box-shadow .18s var(--ease), background .18s var(--ease); }
+.button svg { width:1rem; height:1rem; }
 .button:hover { transform: translateY(-1px); }
-.button-primary { background:var(--accent); color:#090B10; border-color:transparent; }
-.button-quiet { background:var(--surface); }
+.button-primary { background: linear-gradient(180deg, #7DB9FF, var(--accent)); color:#090B10; border-color:transparent; box-shadow: 0 8px 24px -8px var(--glow), 0 1px 0 rgba(255,255,255,.25) inset; }
+.button-primary:hover { box-shadow: 0 14px 30px -8px var(--glow), 0 1px 0 rgba(255,255,255,.25) inset; }
+.button-quiet { background: color-mix(in srgb, var(--surface) 80%, transparent); }
+.button small { font-weight:500; opacity:.75; }
+.meta { display:flex; flex-wrap:wrap; justify-content:center; gap:.4rem 1.1rem; margin-top:1.1rem; font-size:.84rem; color:var(--ink-3); }
+.meta span::before { content:"·"; margin-right:1.1rem; color:var(--ink-3); }
+.meta span:first-child::before { content:none; margin:0; }
 
-.shot { margin: 1.5rem 0 0; }
-.shot img { display:block; width:100%; height:auto; border-radius:.9rem; border:1px solid var(--rule); box-shadow: var(--shadow); }
-.shot figcaption { margin-top:.7rem; font-size:.85rem; color:var(--ink-3); }
+/* framed, cropped screenshot with a glow */
+.shot { margin: 3rem auto 0; max-width: 58rem; position:relative; }
+.shot::before { content:""; position:absolute; inset:-3rem -2rem auto; height:24rem; background: radial-gradient(closest-side, var(--glow), transparent 75%); z-index:-1; }
+.shot .frame { position:relative; border-radius:1rem; padding:1px; background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.03)); box-shadow: 0 40px 80px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(0,0,0,.4); overflow:hidden; }
+.shot .frame img { display:block; width:100%; height:auto; border-radius:calc(1rem - 1px); }
+.shot > img { display:block; width:100%; height:auto; border-radius:.9rem; border:1px solid var(--rule); box-shadow: var(--shadow); }
+.shot .frame.peek { max-height: 34rem; }
+.shot .frame.peek::after { content:""; position:absolute; left:0; right:0; bottom:0; height:9rem; background: linear-gradient(to bottom, transparent, var(--bg)); pointer-events:none; }
+.shot figcaption { margin-top:.9rem; font-size:.85rem; color:var(--ink-3); text-align:center; }
+
+/* feature strip under the hero */
+.strip { display:grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap:.8rem; margin-top:2.5rem; }
+.strip > a { display:flex; gap:.8rem; align-items:flex-start; padding:1rem 1.05rem; border:1px solid var(--rule); border-radius:.9rem; background: color-mix(in srgb, var(--surface) 70%, transparent); text-decoration:none; color:inherit; transition: border-color .18s, transform .18s var(--ease); }
+.strip > a:hover { border-color: var(--accent); transform: translateY(-1px); }
+.strip svg { width:1.35rem; height:1.35rem; flex:none; color:var(--accent); margin-top:.1rem; }
+.strip b { display:block; font-size:.95rem; font-weight:600; }
+.strip span { display:block; font-size:.86rem; color:var(--ink-2); margin-top:.1rem; }
+@media (max-width: 40rem) { .shot .frame.peek { max-height: 22rem; } }
+.settings-grid { display:grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2.5rem; align-items:center; }
+.settings-grid .head { margin-bottom:0; }
+@media (max-width: 52rem) { .settings-grid { grid-template-columns: 1fr; gap:1.5rem; } }
 
 section { padding: clamp(3rem, 7vw, 5.5rem) 0; }
 section.band { background: var(--bg-2); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
@@ -177,42 +218,57 @@ footer { padding: 2.5rem 0 3rem; border-top:1px solid var(--rule); color:var(--i
 
 <a class="skip" href="#main">Skip to content</a>
 
-<div class="shell">
-  <header class="masthead">
-    <a class="wordmark" href="/">
-      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 25 L12 19 L19 12 L25 7" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="19" r="2.8" fill="var(--accent)"/><circle cx="19" cy="12" r="2.8" fill="var(--accent)"/></svg>
-      curv
-    </a>
-    <nav>
-      <a href="#how">How it works</a>
-      <a href="#curve">The curve</a>
-      <a href="#settings">Settings</a>
-      <a href="#limits">Limits</a>
-      <a href="#install">Install</a>
-    </nav>
-  </header>
+<div class="sky" aria-hidden="true"></div>
+
+<div class="top" id="top">
+  <div class="shell">
+    <header class="masthead">
+      <a class="wordmark" href="/">
+        <img src="assets/icon.png" alt="" width="256" height="256" />
+        curv
+      </a>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#curve">The curve</a>
+        <a href="#settings">Settings</a>
+        <a href="#limits">Limits</a>
+        <a href="#install">Install</a>
+        <a class="gh" href="https://github.com/romankhadka/curv" aria-label="Curv on GitHub"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+      </nav>
+    </header>
+  </div>
 </div>
 
 <main id="main">
   <div class="shell">
     <div class="hero">
-      <p class="eyebrow">Native macOS · Apple Silicon · Swift</p>
+      <img class="icon" src="assets/icon.png" alt="" width="256" height="256" />
+      <a class="release" id="release" href="https://github.com/romankhadka/curv/releases/latest"><i></i><span id="release-text">Latest release</span></a>
       <h1>Your fans, <em>your curve</em>.</h1>
       <p class="hero-lede">
-        Curv draws the line between temperature and fan speed and then holds the
-        fans on it. The app reads; a small root helper writes. Close the window
-        and the curve keeps running.
+        Draw the line between temperature and fan speed. A small root helper holds
+        the fans on it, even after you close the window.
       </p>
       <div class="hero-actions">
-        <a class="button button-primary" href="https://github.com/romankhadka/curv/releases/latest">Download for macOS</a>
-        <a class="button button-quiet" href="https://github.com/romankhadka/curv">View source</a>
+        <a class="button button-primary" id="download" href="https://github.com/romankhadka/curv/releases/latest"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8m0 0L5 7m3 3 3-3M3 12.5h10"/></svg>Download for macOS</a>
+        <a class="button button-quiet" href="#curve">Try the curve</a>
       </div>
+      <p class="meta"><span>macOS 15 or newer</span><span>Apple Silicon</span><span>Free and open source, MIT</span><span>No telemetry</span></p>
     </div>
 
     <figure class="shot">
-      <img src="assets/curv.png" alt="The Curv window: live temperature and fan RPM, a draggable curve from 30 to 110 degrees, per-point sliders, and the helper status." width="1360" height="1504" />
+      <div class="frame peek">
+        <img src="assets/curv.png" alt="The Curv window: live temperature and fan RPM, a draggable curve from 30 to 110 degrees, per-point sliders, and the helper status." width="1360" height="1504" />
+      </div>
       <figcaption>Two fans on an M4 Pro following an aggressive curve. The orange dashed line is the temperature right now.</figcaption>
     </figure>
+
+    <div class="strip">
+      <a href="#curve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19 9 13l4 3 8-9"/><circle cx="9" cy="13" r="1.6" fill="currentColor" stroke="none"/><circle cx="13" cy="16" r="1.6" fill="currentColor" stroke="none"/></svg><div><b>Draw it</b><span>Drag points, double-click to add, or start from a preset.</span></div></a>
+      <a href="#how"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.4 3.4 8 8 9 4.6-1 8-4.6 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><div><b>A helper holds it</b><span>Runs as root at boot, restores macOS control when it stops.</span></div></a>
+      <a href="#settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="3" rx="1"/><path d="M6 10v9M12 10v9M18 10v9"/></svg><div><b>Lives in the menu bar</b><span>Temperature or fan speed at a glance, mode switch in the menu.</span></div></a>
+      <a href="#limits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/><circle cx="12" cy="12" r="9"/></svg><div><b>Knows its limits</b><span>Never touches throttling. Forces 100% above the safety floor.</span></div></a>
+    </div>
   </div>
 
   <section id="how">
@@ -278,14 +334,16 @@ footer { padding: 2.5rem 0 3rem; border-top:1px solid var(--rule); color:var(--i
   </section>
 
   <section id="settings">
-    <div class="shell">
+    <div class="shell settings-grid">
       <div class="head">
         <p class="eyebrow">Settings</p>
         <h2>The rest of a Mac app</h2>
         <p>Launch at login. Start quietly in the menu bar or with the window. Show or hide the Dock icon. Pick the sensor, move the safety floor, change how often the helper re-applies. Check for updates against the latest release.</p>
       </div>
-      <figure class="shot" style="max-width:32rem;margin:0">
-        <img src="assets/settings.png" alt="The Curv Settings window, General tab: launch at login, open the window at launch, show in menu bar, menu bar contents, Dock icon, temperature unit." width="960" height="1360" loading="lazy" />
+      <figure class="shot" style="max-width:30rem;margin:0">
+        <div class="frame peek" style="max-height:31rem">
+          <img src="assets/settings.png" alt="The Curv Settings window, General tab: launch at login, open the window at launch, show in menu bar, menu bar contents, Dock icon, temperature unit." width="960" height="1360" loading="lazy" />
+        </div>
       </figure>
     </div>
   </section>
@@ -482,6 +540,25 @@ open build/Curv.app</code><button class="copy" data-copy="#c-build" type="button
   document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => { points = presets[b.dataset.preset].map(([c,p])=>({c,p})); draw(); }));
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
   draw();
+
+  const top = document.getElementById('top');
+  const onScroll = () => top.classList.toggle('scrolled', scrollY > 8);
+  addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  fetch('https://api.github.com/repos/romankhadka/curv/releases/latest', {headers:{Accept:'application/vnd.github+json'}})
+    .then(r => r.ok ? r.json() : null)
+    .then(rel => {
+      if (!rel) return;
+      const zip = (rel.assets || []).find(a => a.name.endsWith('.zip'));
+      const version = rel.tag_name.replace(/^v/, '');
+      document.getElementById('release-text').textContent = 'v' + version + ' · ' + new Date(rel.published_at).toLocaleDateString(undefined, {year:'numeric', month:'short', day:'numeric'});
+      document.getElementById('release').href = rel.html_url;
+      if (zip) {
+        const dl = document.getElementById('download');
+        dl.href = zip.browser_download_url;
+        dl.insertAdjacentHTML('beforeend', ' <small>' + version + ' · ' + Math.round(zip.size / 1024) + ' KB</small>');
+      }
+    }).catch(() => {});
 
   document.querySelectorAll('.copy').forEach(btn => btn.addEventListener('click', async () => {
     const text = document.querySelector(btn.dataset.copy).textContent;
