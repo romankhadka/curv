@@ -185,6 +185,7 @@ footer { padding: 2.5rem 0 3rem; border-top:1px solid var(--rule); color:var(--i
     <nav>
       <a href="#how">How it works</a>
       <a href="#curve">The curve</a>
+      <a href="#settings">Settings</a>
       <a href="#limits">Limits</a>
       <a href="#install">Install</a>
     </nav>
@@ -228,6 +229,8 @@ footer { padding: 2.5rem 0 3rem; border-top:1px solid var(--rule); color:var(--i
             <li>Three modes: Automatic, Custom curve, Max</li>
             <li>Drag points, double-click to add, sliders for exact values</li>
             <li>Quiet, Balanced and Aggressive presets</li>
+            <li>Menu bar item with the live temperature or fan speed, and a menu that switches mode without the window</li>
+            <li>Settings for launch at login, menu bar and Dock visibility, °C or °F, sensor, safety floor and interval</li>
           </ul>
         </div>
         <div class="card">
@@ -236,7 +239,7 @@ footer { padding: 2.5rem 0 3rem; border-top:1px solid var(--rule); color:var(--i
           <ul>
             <li>Starts at boot, restarts if it dies</li>
             <li>Hands the fans back to macOS when it stops</li>
-            <li>Installed and removed from the app, one password prompt each</li>
+            <li>Installed, updated and removed from the app, one password prompt each</li>
           </ul>
         </div>
       </div>
@@ -273,6 +276,19 @@ footer { padding: 2.5rem 0 3rem; border-top:1px solid var(--rule); color:var(--i
     </div>
   </section>
 
+  <section id="settings">
+    <div class="shell">
+      <div class="head">
+        <p class="eyebrow">Settings</p>
+        <h2>The rest of a Mac app</h2>
+        <p>Launch at login. Start quietly in the menu bar or with the window. Show or hide the Dock icon. Pick the sensor, move the safety floor, change how often the helper re-applies. Check for updates against the latest release.</p>
+      </div>
+      <figure class="shot" style="max-width:32rem;margin:0">
+        <img src="assets/settings.png" alt="The Curv Settings window, General tab: launch at login, open the window at launch, show in menu bar, menu bar contents, Dock icon, temperature unit." width="960" height="1360" loading="lazy" />
+      </figure>
+    </div>
+  </section>
+
   <section id="limits">
     <div class="shell">
       <div class="head">
@@ -299,7 +315,7 @@ footer { padding: 2.5rem 0 3rem; border-top:1px solid var(--rule); color:var(--i
       <div class="head">
         <p class="eyebrow">Install</p>
         <h2>Download, clear quarantine, install the helper</h2>
-        <p>Requires macOS 14 or newer on Apple Silicon. The build is signed ad hoc and not notarised by Apple, so macOS quarantines it on download.</p>
+        <p>Requires macOS 15 or newer on Apple Silicon. The build is signed ad hoc and not notarised by Apple, so macOS quarantines it on download.</p>
       </div>
       <div class="paths">
         <div class="path lead">

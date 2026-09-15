@@ -10,11 +10,13 @@ final class FanModel: ObservableObject {
   @Published var thermal: ThermalReading?
   @Published var helperInstalled = false
   @Published var helperLoaded = false
+  @Published var helperOutdated = false
   @Published var daemon: DaemonStatus?
   @Published var lastError: String?
   @Published var smcAvailable = true
 
   let configURL = FanConfig.defaultURL()
+  let updater = Updater()
   private var smc: SMC?
   private var timer: Timer?
   private var saveTask: Task<Void, Never>?
@@ -46,6 +48,15 @@ final class FanModel: ObservableObject {
   func refreshHelper() {
     helperInstalled = Helper.isInstalled()
     helperLoaded = helperInstalled && Helper.isLoaded()
+    helperOutdated = Helper.installedMatchesBundle() == false
+  }
+
+  var helperSummary: String {
+    if !helperInstalled { return "Helper not installed" }
+    if helperOutdated { return daemonAlive ? "Helper running, update available" : "Helper installed, update available" }
+    if daemonAlive { return "Helper running" }
+    if helperLoaded { return "Helper loaded, waiting for first report" }
+    return "Helper installed, not running"
   }
 
   private func scheduleSave() {

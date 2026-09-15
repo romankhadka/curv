@@ -6,6 +6,7 @@ import SwiftUI
 struct CurveEditor: View {
   @Binding var points: [CurvePoint]
   var currentTemp: Double?
+  var fahrenheit = false
   var onCommit: () -> Void = {}
 
   private let tMin = 30.0
@@ -82,7 +83,7 @@ struct CurveEditor: View {
       line.move(to: CGPoint(x: gx, y: r.minY))
       line.addLine(to: CGPoint(x: gx, y: r.maxY))
       ctx.stroke(line, with: .color(grid), lineWidth: 1)
-      ctx.draw(Text("\(Int(t))°").font(.caption2).foregroundStyle(.secondary), at: CGPoint(x: gx, y: r.maxY + 12))
+      ctx.draw(Text(Temperature.format(t, fahrenheit: fahrenheit, unit: false)).font(.caption2).foregroundStyle(.secondary), at: CGPoint(x: gx, y: r.maxY + 12))
     }
     for pc in stride(from: 0.0, through: 100, by: 25) {
       let gy = y(pc, r)
@@ -113,7 +114,7 @@ struct CurveEditor: View {
       marker.move(to: CGPoint(x: gx, y: r.minY))
       marker.addLine(to: CGPoint(x: gx, y: r.maxY))
       ctx.stroke(marker, with: .color(.orange), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-      ctx.draw(Text("\(Int(t))°C now").font(.caption2).foregroundStyle(.orange), at: CGPoint(x: gx, y: r.minY - 4))
+      ctx.draw(Text("\(Temperature.format(t, fahrenheit: fahrenheit)) now").font(.caption2).foregroundStyle(.orange), at: CGPoint(x: gx, y: r.minY - 4))
     }
 
     for p in points {

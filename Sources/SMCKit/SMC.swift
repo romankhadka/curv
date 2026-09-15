@@ -138,6 +138,14 @@ public struct ThermalReading: Equatable {
     self.sensorCount = sensorCount
   }
 
+  public func driving(for source: SensorSource) -> (label: String, celsius: Float)? {
+    switch source {
+    case .auto: return driving
+    case .cpu: return cpu.map { ("CPU", $0) }
+    case .gpu: return gpu.map { ("GPU", $0) }
+    }
+  }
+
   /// The reading that drives the curve: the hotter of CPU and GPU.
   public var driving: (label: String, celsius: Float)? {
     switch (cpu, gpu) {

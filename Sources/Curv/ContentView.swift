@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ContentView: View {
   @EnvironmentObject var model: FanModel
+  @AppStorage(Pref.fahrenheit) private var fahrenheit = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 14) {
@@ -37,9 +38,9 @@ struct ContentView: View {
         HStack {
           Text("Temperature")
           Spacer()
-          if let th = model.thermal, let hot = th.driving {
-            Text("\(hot.celsius, specifier: "%.0f") °C").monospacedDigit().bold()
-            Text("driving: \(hot.label) · CPU \(th.cpu.map { String(format: "%.0f", $0) } ?? "-") · GPU \(th.gpu.map { String(format: "%.0f", $0) } ?? "-") · \(th.sensorCount) sensors")
+          if let th = model.thermal, let hot = th.driving(for: model.config.sensor) {
+            Text(Temperature.format(hot.celsius, fahrenheit: fahrenheit)).monospacedDigit().bold()
+            Text("driving: \(hot.label) · CPU \(Temperature.format(th.cpu, fahrenheit: fahrenheit, unit: false)) · GPU \(Temperature.format(th.gpu, fahrenheit: fahrenheit, unit: false)) · \(th.sensorCount) sensors")
               .font(.caption).foregroundStyle(.secondary)
           } else {
             Text("n/a").foregroundStyle(.secondary)
@@ -67,7 +68,8 @@ struct ContentView: View {
       VStack(spacing: 10) {
         CurveEditor(
           points: $model.config.points,
-          currentTemp: model.thermal?.driving.map { Double($0.celsius) },
+          currentTemp: model.thermal?.driving(for: model.config.sensor).map { Double($0.celsius) },
+          fahrenheit: fahrenheit,
           onCommit: { model.sortPoints() }
         )
         .frame(height: 240)
@@ -84,7 +86,7 @@ struct ContentView: View {
         VStack(spacing: 4) {
           ForEach($model.config.points) { $point in
             HStack(spacing: 8) {
-              Text("\(Int(point.celsius)) °C").monospacedDigit().frame(width: 50, alignment: .trailing)
+              Text(Temperature.format(point.celsius, fahrenheit: fahrenheit)).monospacedDigit().frame(width: 54, alignment: .trailing)
               Slider(value: $point.celsius, in: 30...110, step: 1)
               Text("\(Int(point.percent)) %").monospacedDigit().frame(width: 44, alignment: .trailing)
               Slider(value: $point.percent, in: 0...100, step: 1)
@@ -95,7 +97,7 @@ struct ContentView: View {
           }
         }
 
-        Text("Percent maps onto each fan's own min–max RPM. At \(Int(model.config.safetyCelsius)) °C and above the helper forces 100%. macOS thermal throttling still applies.")
+        Text("Percent maps onto each fan's own min–max RPM. At \(Temperature.format(model.config.safetyCelsius, fahrenheit: fahrenheit)) and above the helper forces 100%. macOS thermal throttling still applies.")
           .font(.caption).foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
           .frame(maxWidth: .infinity, alignment: .leading)
@@ -112,6 +114,7 @@ struct ContentView: View {
           Text(statusText)
           Spacer()
           if model.helperInstalled {
+            if model.helperOutdated { Button("Update helper…") { model.installHelper() } }
             Button("Restart") { model.restartHelper() }
             Button("Uninstall", role: .destructive) { model.uninstallHelper() }
           } else {
@@ -119,7 +122,7 @@ struct ContentView: View {
           }
         }
         if let d = model.daemon, model.daemonAlive {
-          Text("Applied \(Int(d.percent))% at \(Int(d.celsius)) °C (\(d.sensor)) · \(d.mode.label) · targets \(d.targets.map { String(Int($0)) }.joined(separator: ", ")) rpm")
+          Text("Applied \(Int(d.percent))% at \(Temperature.format(d.celsius, fahrenheit: fahrenheit)) (\(d.sensor)) · \(d.mode.label) · targets \(d.targets.map { String(Int($0)) }.joined(separator: ", ")) rpm")
             .font(.caption).foregroundStyle(.secondary)
         }
         Text("The helper is a LaunchDaemon that runs as root and applies this window's settings, even when the app is closed. Installing asks for your password once. Log: \(Helper.logPath)")
@@ -132,13 +135,13 @@ struct ContentView: View {
 
   private var statusText: String {
     if !model.helperInstalled { return "Not installed. Fans stay under macOS control." }
-    if model.daemonAlive { return "Running" }
-    if model.helperLoaded { return "Loaded, waiting for first report" }
-    return "Installed, not running"
+    let base = model.daemonAlive ? "Running" : model.helperLoaded ? "Loaded, waiting for first report" : "Installed, not running"
+    return model.helperOutdated ? "\(base) · this app has a newer helper" : base
   }
 
   private var statusColor: Color {
     if !model.helperInstalled { return .gray }
+    if model.helperOutdated { return .yellow }
     return model.daemonAlive ? .green : .orange
   }
 }

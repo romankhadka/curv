@@ -27,17 +27,51 @@ public enum FanMode: String, Codable, CaseIterable, Identifiable {
   }
 }
 
+public enum SensorSource: String, Codable, CaseIterable, Identifiable {
+  case auto, cpu, gpu
+
+  public var id: String { rawValue }
+
+  public var label: String {
+    switch self {
+    case .auto: return "Hotter of CPU and GPU"
+    case .cpu: return "CPU only"
+    case .gpu: return "GPU only"
+    }
+  }
+}
+
 /// Shared between the app (writer) and the daemon (reader).
 public struct FanConfig: Codable, Equatable {
   public var mode: FanMode
   public var points: [CurvePoint]
   /// At or above this temperature the daemon forces 100% regardless of the curve.
   public var safetyCelsius: Double
+  public var sensor: SensorSource
+  /// How often the daemon re-reads the sensors and re-applies the curve.
+  public var intervalSeconds: Double
 
-  public init(mode: FanMode = .auto, points: [CurvePoint] = FanConfig.balanced, safetyCelsius: Double = 100) {
+  public init(
+    mode: FanMode = .auto, points: [CurvePoint] = FanConfig.balanced, safetyCelsius: Double = 100,
+    sensor: SensorSource = .auto, intervalSeconds: Double = 2
+  ) {
     self.mode = mode
     self.points = points
     self.safetyCelsius = safetyCelsius
+    self.sensor = sensor
+    self.intervalSeconds = intervalSeconds
+  }
+
+  enum CodingKeys: String, CodingKey { case mode, points, safetyCelsius, sensor, intervalSeconds }
+
+  /// Every key is optional on read so older config files keep working.
+  public init(from decoder: Decoder) throws {
+    let c = try decoder.container(keyedBy: CodingKeys.self)
+    mode = try c.decodeIfPresent(FanMode.self, forKey: .mode) ?? .auto
+    points = try c.decodeIfPresent([CurvePoint].self, forKey: .points) ?? FanConfig.balanced
+    safetyCelsius = try c.decodeIfPresent(Double.self, forKey: .safetyCelsius) ?? 100
+    sensor = try c.decodeIfPresent(SensorSource.self, forKey: .sensor) ?? .auto
+    intervalSeconds = try c.decodeIfPresent(Double.self, forKey: .intervalSeconds) ?? 2
   }
 
   public static let quiet = [

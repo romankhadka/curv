@@ -5,12 +5,12 @@ import Foundation
 import SMCKit
 
 var configPath = FanConfig.defaultURL().path
-var interval: UInt32 = 2
+var intervalOverride: UInt32?
 var args = CommandLine.arguments.dropFirst()
 while let a = args.popFirst() {
   switch a {
   case "--config": configPath = args.popFirst() ?? configPath
-  case "--interval": interval = UInt32(args.popFirst() ?? "") ?? interval
+  case "--interval": intervalOverride = UInt32(args.popFirst() ?? "")
   case "--sensors":
     guard let smc = try? SMC() else { exit(1) }
     for s in smc.temperatures().sorted(by: { $0.celsius > $1.celsius }) { print(s.key, String(format: "%.1f", s.celsius)) }
@@ -47,7 +47,7 @@ func restoreAuto() {
   for i in 0..<fanCount { try? smc.setFanManual(i, false) }
 }
 
-log("started: \(fanCount) fans, config \(configPath), interval \(interval)s")
+log("started: \(fanCount) fans, config \(configPath)")
 smc.discoverSensors()
 
 var lastMode: FanMode?
@@ -55,7 +55,7 @@ var lastPercent = -1.0
 
 while !stopping {
   let config = (try? FanConfig.load(from: URL(fileURLWithPath: configPath))) ?? FanConfig()
-  let hot = smc.thermal().driving
+  let hot = smc.thermal().driving(for: config.sensor)
   let temp = Double(hot?.celsius ?? 0)
 
   // percent < 0 means "hand control back to macOS".
@@ -97,7 +97,7 @@ while !stopping {
     celsius: temp, sensor: hot?.label ?? "", percent: Swift.max(percent, 0), targets: targets
   )
   try? status.save()
-  sleep(interval)
+  sleep(intervalOverride ?? UInt32(min(max(config.intervalSeconds, 1), 10)))
 }
 
 restoreAuto()

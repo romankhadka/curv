@@ -25,6 +25,14 @@ enum Helper {
 
   static func isLoaded() -> Bool { run("/bin/launchctl", ["print", "system/\(label)"]).status == 0 }
 
+  /// nil when nothing is installed or the bundled daemon cannot be read.
+  static func installedMatchesBundle() -> Bool? {
+    guard isInstalled(), let source = bundledDaemon,
+          let bundled = try? Data(contentsOf: source),
+          let installed = FileManager.default.contents(atPath: binary) else { return nil }
+    return bundled == installed
+  }
+
   static func install(configPath: String) throws {
     guard let source = bundledDaemon else {
       throw Failure(message: "fancurved binary not found in the app bundle. Build with build.sh.")
