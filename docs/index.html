@@ -99,10 +99,10 @@ a { color:inherit; text-underline-offset:.18em; }
 .wordmark { display:inline-flex; align-items:center; gap:.55rem; font-weight:700; letter-spacing:-.02em; text-decoration:none; font-size:1.05rem; }
 .wordmark svg { width:1.35rem; height:1.35rem; }
 .wordmark img { width:1.5rem; height:1.5rem; border-radius:.35rem; }
-.masthead nav .gh { display:inline-flex; align-items:center; gap:.35rem; padding:.3rem .65rem; border:1px solid var(--rule-2); border-radius:.5rem; color:var(--ink); }
+.masthead nav .gh { gap:.35rem; padding:0 .65rem; border:1px solid var(--rule-2); border-radius:.5rem; color:var(--ink); }
 .masthead nav .gh svg { width:.95rem; height:.95rem; }
-.masthead nav { display:flex; gap:1.2rem; font-size:.92rem; color:var(--ink-2); }
-.masthead nav a { text-decoration:none; }
+.masthead nav { display:flex; align-items:center; gap:1.2rem; font-size:.92rem; color:var(--ink-2); line-height:1; }
+.masthead nav a { text-decoration:none; display:inline-flex; align-items:center; min-height:2.1rem; }
 .masthead nav a:hover { color:var(--ink); }
 @media (max-width: 40rem) { .masthead nav { display:none; } }
 
