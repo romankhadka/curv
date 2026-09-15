@@ -137,7 +137,9 @@ h1 em { font-style:normal; color:var(--accent); background: linear-gradient(100d
 .shot figcaption { margin-top:.9rem; font-size:.85rem; color:var(--ink-3); text-align:center; }
 
 /* feature strip under the hero */
-.strip { display:grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap:.8rem; margin-top:2.5rem; }
+.strip { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:.8rem; margin-top:2.5rem; }
+@media (min-width: 64rem) { .strip { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 30rem) { .strip { grid-template-columns: 1fr; } }
 .strip > a { display:flex; gap:.8rem; align-items:flex-start; padding:1rem 1.05rem; border:1px solid var(--rule); border-radius:.9rem; background: color-mix(in srgb, var(--surface) 70%, transparent); text-decoration:none; color:inherit; transition: border-color .18s, transform .18s var(--ease); }
 .strip > a:hover { border-color: var(--accent); transform: translateY(-1px); }
 .strip svg { width:1.35rem; height:1.35rem; flex:none; color:var(--accent); margin-top:.1rem; }
