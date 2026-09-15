@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build, without the leading v (e.g. 1.0.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Resolve the version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version="${{ inputs.version }}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "Refusing to build '$version': expected a semantic version" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Show toolchain
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app
+          swift --version
+
+      - name: Build
+        env:
+          CURV_VERSION: ${{ steps.version.outputs.version }}
+        run: ./build.sh
+
+      - name: Package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          codesign --verify --strict --deep build/Curv.app
+          mkdir -p dist
+          # ditto keeps symlinks and extended attributes, so the signature survives.
+          ditto -c -k --keepParent --sequesterRsrc build/Curv.app "dist/Curv-$VERSION.zip"
+          (cd dist && shasum -a 256 "Curv-$VERSION.zip" > SHA256SUMS.txt)
+          cat dist/SHA256SUMS.txt
+
+      - name: Write the release notes
+        id: notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          checksum="$(awk '{print $1}' dist/SHA256SUMS.txt)"
+          notes="$RUNNER_TEMP/notes.md"
+          {
+            echo "## Install"
+            echo
+            echo "1. Download \`Curv-$VERSION.zip\` below and unzip it."
+            echo "2. Move **Curv.app** to your Applications folder."
+            echo "3. Open it and click **Install…** in the Helper box. macOS asks for your password once."
+            echo
+            echo "> [!IMPORTANT]"
+            echo "> This build is signed ad hoc and **not notarised by Apple**, so macOS quarantines"
+            echo "> it on download and says it cannot be verified. To run it anyway:"
+            echo ">"
+            echo "> \`\`\`bash"
+            echo "> xattr -dr com.apple.quarantine /Applications/Curv.app"
+            echo "> \`\`\`"
+            echo
+            echo "**Requires macOS 14 or newer on Apple Silicon.**"
+            echo
+            echo "\`\`\`"
+            echo "SHA-256  $checksum"
+            echo "\`\`\`"
+          } > "$notes"
+          echo "path=$notes" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="v$VERSION"
+          if ! git rev-parse "$tag" >/dev/null 2>&1; then
+            git tag "$tag"
+            git push origin "$tag"
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "dist/Curv-$VERSION.zip" dist/SHA256SUMS.txt --clobber
+          else
+            gh release create "$tag" "dist/Curv-$VERSION.zip" dist/SHA256SUMS.txt \
+              --title "Curv $VERSION" --notes-file "${{ steps.notes.outputs.path }}"
+          fi
