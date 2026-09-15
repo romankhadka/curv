@@ -156,13 +156,14 @@ section.band { background: var(--bg-2); border-top:1px solid var(--rule); border
 .path p { color:var(--ink-2); font-size:.95rem; }
 .path ol { margin:.5rem 0 0; padding-left:1.2rem; color:var(--ink-2); font-size:.95rem; }
 .cmd { position:relative; margin-top:.9rem; background:var(--bg); border:1px solid var(--rule); border-radius:.6rem; }
-.cmd code { display:block; padding:.85rem 5.2rem .85rem 1rem; font-family:var(--mono); font-size:.86rem; line-height:1.55; white-space:pre; overflow-x:auto; color:var(--ink); }
+.cmd code { display:block; padding:2.3rem 1rem .85rem; font-family:var(--mono); font-size:.86rem; line-height:1.55; white-space:pre; overflow-x:auto; color:var(--ink); }
 .cmd code .c { color:var(--ink-3); }
 .copy { position:absolute; top:.5rem; right:.5rem; font:inherit; font-size:.78rem; font-weight:600; padding:.32rem .6rem; border-radius:.4rem; border:1px solid var(--rule-2); background:var(--raised); color:var(--ink); cursor:pointer; }
 .copy[data-done="1"] { color: var(--ok); border-color: var(--ok); }
-table.files { width:100%; border-collapse:collapse; margin-top:.8rem; font-size:.9rem; }
-table.files td { padding:.45rem 0; border-top:1px solid var(--rule); vertical-align:top; color:var(--ink-2); }
-table.files td:first-child { font-family:var(--mono); font-size:.82rem; color:var(--ink); padding-right:1rem; }
+.files { margin:.8rem 0 0; }
+.files div { padding:.55rem 0; border-top:1px solid var(--rule); }
+.files dt { font-family:var(--mono); font-size:.8rem; color:var(--ink); overflow-wrap:anywhere; line-height:1.45; }
+.files dd { margin:.15rem 0 0; font-size:.88rem; color:var(--ink-2); }
 
 footer { padding: 2.5rem 0 3rem; border-top:1px solid var(--rule); color:var(--ink-2); font-size:.92rem; }
 .foot-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
@@ -342,12 +343,12 @@ open build/Curv.app</code><button class="copy" data-copy="#c-build" type="button
         <div class="path">
           <p class="eyebrow">What gets installed</p>
           <h3>Four files, all removable</h3>
-          <table class="files">
-            <tr><td>/Library/PrivilegedHelperTools/com.romn.fancurved</td><td>the daemon</td></tr>
-            <tr><td>/Library/LaunchDaemons/com.romn.fancurved.plist</td><td>starts it at boot</td></tr>
-            <tr><td>/tmp/fancurved.log</td><td>daemon log</td></tr>
-            <tr><td>/tmp/fancurved.status.json</td><td>heartbeat the app reads</td></tr>
-          </table>
+          <dl class="files">
+            <div><dt>/Library/PrivilegedHelperTools/com.romn.fancurved</dt><dd>the daemon</dd></div>
+            <div><dt>/Library/LaunchDaemons/com.romn.fancurved.plist</dt><dd>starts it at boot and keeps it alive</dd></div>
+            <div><dt>/tmp/fancurved.log</dt><dd>daemon log</dd></div>
+            <div><dt>/tmp/fancurved.status.json</dt><dd>heartbeat the app reads</dd></div>
+          </dl>
           <p style="margin-top:.8rem"><b>Uninstall</b> in the Helper box stops the daemon, removes the first two, and returns the fans to macOS.</p>
         </div>
       </div>
