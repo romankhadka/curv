@@ -11,6 +11,8 @@ int smc_key_info(const char *key, uint32_t *size, char type[5]);
 int smc_read_bytes(const char *key, uint8_t *buf, uint32_t *len);
 int smc_write_bytes(const char *key, const uint8_t *buf, uint32_t len);
 int smc_read_float(const char *key, float *out);
+// For a key already known to be a 4-byte float: skips the key-info call.
+int smc_read_float_known(const char *key, float *out);
 int smc_write_float(const char *key, float value);
 int smc_read_u8(const char *key, uint8_t *out);
 int smc_write_u8(const char *key, uint8_t value);

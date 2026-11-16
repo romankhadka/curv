@@ -140,7 +140,9 @@ public struct DaemonStatus: Codable {
     self.targets = targets
   }
 
-  public var isFresh: Bool { Date().timeIntervalSince1970 - updatedAt < 10 }
+  /// The daemon writes every 1–10 s, so 25 s covers its slowest interval
+  /// plus a missed tick.
+  public var isFresh: Bool { Date().timeIntervalSince1970 - updatedAt < 25 }
 
   public static func load() -> DaemonStatus? {
     guard let data = FileManager.default.contents(atPath: path) else { return nil }

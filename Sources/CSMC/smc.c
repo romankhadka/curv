@@ -70,13 +70,19 @@ int smc_key_info(const char *key, uint32_t *size, char type[5]) {
   return 0;
 }
 
-int smc_read_bytes(const char *key, uint8_t *buf, uint32_t *len) {
-  uint32_t size; char type[5];
-  if (smc_key_info(key, &size, type) || size > 32) return -1;
+static int read_sized(const char *key, uint32_t size, uint8_t *buf) {
   SMCKeyData in = {0}, out = {0};
   in.key = key4(key); in.keyInfo.dataSize = size; in.data8 = SMC_CMD_READ_BYTES;
   if (call(&in, &out)) return -1;
-  memcpy(buf, out.bytes, size); *len = size;
+  memcpy(buf, out.bytes, size);
+  return 0;
+}
+
+int smc_read_bytes(const char *key, uint8_t *buf, uint32_t *len) {
+  uint32_t size; char type[5];
+  if (smc_key_info(key, &size, type) || size > 32) return -1;
+  if (read_sized(key, size, buf)) return -1;
+  *len = size;
   return 0;
 }
 
@@ -91,6 +97,13 @@ int smc_write_bytes(const char *key, const uint8_t *buf, uint32_t len) {
 int smc_read_float(const char *key, float *out) {
   uint8_t b[32]; uint32_t n;
   if (smc_read_bytes(key, b, &n) || n != 4) return -1;
+  memcpy(out, b, 4);
+  return 0;
+}
+
+int smc_read_float_known(const char *key, float *out) {
+  uint8_t b[4];
+  if (read_sized(key, 4, b)) return -1;
   memcpy(out, b, 4);
   return 0;
 }

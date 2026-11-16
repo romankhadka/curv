@@ -23,6 +23,8 @@ final class FanModel: ObservableObject {
   let configURL = FanConfig.defaultURL()
   let updater = Updater()
   private var smc: SMC?
+  /// Same filter as the daemon, so the window shows the temperature the curve uses.
+  private var thermalFilter = ThermalFilter()
   private var timer: Timer?
   private var saveTask: Task<Void, Never>?
   private var tick = 0
@@ -44,7 +46,7 @@ final class FanModel: ObservableObject {
   func refresh() {
     guard let smc else { return }
     fans = smc.fans()
-    thermal = smc.thermal()
+    thermal = thermalFilter.update(smc.thermal(), at: Date().timeIntervalSince1970)
     daemon = DaemonStatus.load()
     tick += 1
     if tick % 5 == 0 { refreshHelper() }

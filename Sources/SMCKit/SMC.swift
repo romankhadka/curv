@@ -26,12 +26,19 @@ public struct SensorReading: Identifiable, Equatable {
   public var id: String { key }
   public let key: String
   public let celsius: Float
+
+  public init(key: String, celsius: Float) {
+    self.key = key
+    self.celsius = celsius
+  }
 }
 
 /// Apple Silicon SMC fan and temperature access.
 /// Fan keys: FNum, F<n>Ac (actual), F<n>Tg (target), F<n>Mn/Mx (limits), F<n>Md (0 auto, 1 manual).
 public final class SMC {
   private var sensorKeys: [String] = []
+  /// The CPU-die (Tp*) and GPU (Tg*) keys: the only ones `thermal()` reads.
+  private var thermalKeys: [String] = []
 
   public init() throws {
     guard smc_open() == 0 else { throw SMCError.openFailed }
@@ -102,28 +109,31 @@ public final class SMC {
     return type.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
   }
 
-  /// Every float-typed key starting with "T" is treated as a temperature sensor.
+  /// Every float-typed key starting with "T" is treated as a temperature
+  /// sensor. Discovery checks the type, so later reads skip the key-info call.
   public func discoverSensors() {
     sensorKeys = allKeys().filter { $0.hasPrefix("T") && keyType($0) == "flt " }
+    thermalKeys = sensorKeys.filter { $0.hasPrefix("Tp") || $0.hasPrefix("Tg") }
   }
 
+  /// Every temperature key, for listing. The curve needs only `thermal()`.
   public func temperatures() -> [SensorReading] {
     if sensorKeys.isEmpty { discoverSensors() }
-    return sensorKeys.compactMap { key in
-      guard let v = readFloat(key), v > 5, v < 120 else { return nil }
-      return SensorReading(key: key, celsius: v)
-    }
+    return read(sensorKeys).filter { $0.celsius > 5 && $0.celsius < 120 }
   }
 
-  /// CPU die average (Tp* keys) and GPU average (Tg* keys). Individual core
-  /// keys spike well above the package temperature, so averages drive the curve.
+  /// One raw CPU and GPU sample. A quarter of the keys is enough for the
+  /// curve, so this reads far fewer keys than `temperatures()`.
   public func thermal() -> ThermalReading {
-    let temps = temperatures().filter { $0.celsius < 115 }
-    func average(prefix: String) -> Float? {
-      let values = temps.filter { $0.key.hasPrefix(prefix) }.map(\.celsius)
-      return values.isEmpty ? nil : values.reduce(0, +) / Float(values.count)
+    if sensorKeys.isEmpty { discoverSensors() }
+    return ThermalReading(readings: read(thermalKeys))
+  }
+
+  private func read(_ keys: [String]) -> [SensorReading] {
+    keys.compactMap { key in
+      var v: Float = 0
+      return smc_read_float_known(key, &v) == 0 ? SensorReading(key: key, celsius: v) : nil
     }
-    return ThermalReading(cpu: average(prefix: "Tp"), gpu: average(prefix: "Tg"), sensorCount: temps.count)
   }
 }
 
@@ -136,6 +146,29 @@ public struct ThermalReading: Equatable {
     self.cpu = cpu
     self.gpu = gpu
     self.sensorCount = sensorCount
+  }
+
+  /// CPU-die average (Tp* keys) and GPU average (Tg* keys). Single core keys
+  /// spike well above the package temperature, so averages drive the curve.
+  ///
+  /// On Apple Silicon, power-gated cores report exactly 40.0 °C, and in some
+  /// samples every Tp key reads 40.0 or about 5 °C. An average over those
+  /// values swings by tens of degrees from one second to the next, so they
+  /// are dropped. A sample with no valid key gives nil; `ThermalFilter` then
+  /// holds the last value.
+  public init(readings: [SensorReading]) {
+    let valid = readings.filter { Self.isValid($0.celsius) }
+    func average(prefix: String) -> Float? {
+      let values = valid.filter { $0.key.hasPrefix(prefix) }.map(\.celsius)
+      return values.isEmpty ? nil : values.reduce(0, +) / Float(values.count)
+    }
+    self.init(cpu: average(prefix: "Tp"), gpu: average(prefix: "Tg"), sensorCount: valid.count)
+  }
+
+  static let placeholderCelsius: Float = 40
+
+  static func isValid(_ celsius: Float) -> Bool {
+    celsius >= 20 && celsius < 115 && celsius != placeholderCelsius
   }
 
   public func driving(for source: SensorSource) -> (label: String, celsius: Float)? {
