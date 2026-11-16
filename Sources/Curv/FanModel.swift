@@ -11,6 +11,7 @@ final class FanModel: ObservableObject {
   @Published var helperInstalled = false
   @Published var helperLoaded = false
   @Published var helperOutdated = false
+  @Published var helperNeedsApproval = false
   @Published var daemon: DaemonStatus?
   @Published var lastError: String?
   @Published var smcAvailable = true
@@ -49,6 +50,7 @@ final class FanModel: ObservableObject {
     helperInstalled = Helper.isInstalled()
     helperLoaded = helperInstalled && Helper.isLoaded()
     helperOutdated = Helper.installedMatchesBundle() == false
+    helperNeedsApproval = !helperLoaded && Helper.needsApproval()
   }
 
   var helperSummary: String {
@@ -56,6 +58,7 @@ final class FanModel: ObservableObject {
     if helperOutdated { return daemonAlive ? "Helper running, update available" : "Helper installed, update available" }
     if daemonAlive { return "Helper running" }
     if helperLoaded { return "Helper loaded, waiting for first report" }
+    if helperNeedsApproval { return "Helper blocked in Login Items" }
     return "Helper installed, not running"
   }
 
@@ -106,6 +109,9 @@ final class FanModel: ObservableObject {
 
   // MARK: Helper
 
+  static let approvalHint =
+    "macOS blocks the helper. In Login Items & Extensions, turn on \"Allow in the Background\" for com.romn.fancurved, then click Restart."
+
   func installHelper() {
     do {
       try config.save(to: configURL)
@@ -115,6 +121,7 @@ final class FanModel: ObservableObject {
       lastError = error.localizedDescription
     }
     refreshHelper()
+    if helperNeedsApproval { lastError = Self.approvalHint }
   }
 
   func uninstallHelper() {
@@ -128,6 +135,12 @@ final class FanModel: ObservableObject {
   }
 
   func restartHelper() {
+    refreshHelper()
+    if helperNeedsApproval {
+      lastError = Self.approvalHint
+      Helper.openLoginItems()
+      return
+    }
     do {
       try Helper.restart()
       lastError = nil

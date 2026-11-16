@@ -115,11 +115,17 @@ struct ContentView: View {
           Spacer()
           if model.helperInstalled {
             if model.helperOutdated { Button("Update helper…") { model.installHelper() } }
+            if model.helperNeedsApproval { Button("Open Login Items…") { Helper.openLoginItems() } }
             Button("Restart") { model.restartHelper() }
             Button("Uninstall", role: .destructive) { model.uninstallHelper() }
           } else {
             Button("Install…") { model.installHelper() }
           }
+        }
+        if model.helperNeedsApproval {
+          Text(FanModel.approvalHint)
+            .font(.caption).foregroundStyle(.red)
+            .fixedSize(horizontal: false, vertical: true)
         }
         if let d = model.daemon, model.daemonAlive {
           Text("Applied \(Int(d.percent))% at \(Temperature.format(d.celsius, fahrenheit: fahrenheit)) (\(d.sensor)) · \(d.mode.label) · targets \(d.targets.map { String(Int($0)) }.joined(separator: ", ")) rpm")
@@ -135,12 +141,16 @@ struct ContentView: View {
 
   private var statusText: String {
     if !model.helperInstalled { return "Not installed. Fans stay under macOS control." }
-    let base = model.daemonAlive ? "Running" : model.helperLoaded ? "Loaded, waiting for first report" : "Installed, not running"
+    let base = model.daemonAlive ? "Running"
+      : model.helperLoaded ? "Loaded, waiting for first report"
+      : model.helperNeedsApproval ? "Blocked by macOS"
+      : "Installed, not running"
     return model.helperOutdated ? "\(base) · this app has a newer helper" : base
   }
 
   private var statusColor: Color {
     if !model.helperInstalled { return .gray }
+    if model.helperNeedsApproval { return .red }
     if model.helperOutdated { return .yellow }
     return model.daemonAlive ? .green : .orange
   }

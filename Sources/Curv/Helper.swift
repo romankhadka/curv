@@ -1,4 +1,5 @@
 import Foundation
+import ServiceManagement
 
 /// Installs `fancurved` as a LaunchDaemon. Every privileged step runs through
 /// one `osascript ... with administrator privileges` call, so macOS shows a
@@ -24,6 +25,15 @@ enum Helper {
   static func isInstalled() -> Bool { FileManager.default.fileExists(atPath: plist) }
 
   static func isLoaded() -> Bool { run("/bin/launchctl", ["print", "system/\(label)"]).status == 0 }
+
+  /// True when the "Allow in the Background" switch for the daemon is off in
+  /// System Settings > General > Login Items & Extensions. launchd then skips
+  /// the daemon at boot and refuses to bootstrap it.
+  static func needsApproval() -> Bool {
+    isInstalled() && SMAppService.statusForLegacyPlist(at: URL(fileURLWithPath: plist)) == .requiresApproval
+  }
+
+  static func openLoginItems() { SMAppService.openSystemSettingsLoginItems() }
 
   /// nil when nothing is installed or the bundled daemon cannot be read.
   static func installedMatchesBundle() -> Bool? {
@@ -78,7 +88,12 @@ enum Helper {
   }
 
   static func restart() throws {
-    try runPrivileged("launchctl kickstart -k system/\(label)")
+    // kickstart needs a loaded service. After a reboot with the daemon
+    // disallowed, or after a manual bootout, load it instead.
+    try runPrivileged(
+      "if launchctl print system/\(label) >/dev/null 2>&1; then launchctl kickstart -k system/\(label); "
+        + "else launchctl bootstrap system \(q(plist)); fi"
+    )
   }
 
   // MARK: Plumbing

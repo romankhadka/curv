@@ -127,6 +127,7 @@ struct HelperSettings: View {
         HStack {
           if model.helperInstalled {
             if model.helperOutdated { Button("Update helper…") { model.installHelper() } }
+            if model.helperNeedsApproval { Button("Open Login Items…") { Helper.openLoginItems() } }
             Button("Restart") { model.restartHelper() }
             Button("Uninstall…", role: .destructive) { model.uninstallHelper() }
           } else {
