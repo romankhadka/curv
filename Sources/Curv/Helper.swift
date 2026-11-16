@@ -27,8 +27,8 @@ enum Helper {
   static func isLoaded() -> Bool { run("/bin/launchctl", ["print", "system/\(label)"]).status == 0 }
 
   /// True when the "Allow in the Background" switch for the daemon is off in
-  /// System Settings > General > Login Items & Extensions. launchd then skips
-  /// the daemon at boot and refuses to bootstrap it.
+  /// System Settings > General > Login Items & Extensions. launchd then does
+  /// not load the daemon at boot.
   static func needsApproval() -> Bool {
     SMAppService.statusForLegacyPlist(at: URL(fileURLWithPath: plist)) == .requiresApproval
   }

@@ -136,6 +136,8 @@ final class FanModel: ObservableObject {
       lastError = error.localizedDescription
     }
     refreshHelper()
+    // The approval hint replaces launchctl's raw bootstrap error.
+    if helperState == .needsApproval { lastError = nil }
   }
 
   func uninstallHelper() {
