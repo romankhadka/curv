@@ -15,7 +15,10 @@ while let a = args.popFirst() {
   case "--dry-run": dryRun = true
   case "--sensors":
     guard let smc = try? SMC() else { exit(1) }
-    for s in smc.temperatures().sorted(by: { $0.celsius > $1.celsius }) { print(s.key, String(format: "%.1f", s.celsius)) }
+    for s in smc.temperatures().sorted(by: { $0.celsius > $1.celsius }) {
+      let role = !ThermalReading.isThermalKey(s.key) ? "" : ThermalReading.isValid(s.celsius) ? "  curve" : "  curve, ignored"
+      print(s.key, String(format: "%.1f", s.celsius) + role)
+    }
     let th = smc.thermal()
     print("CPU avg \(th.cpu.map { String(format: "%.1f", $0) } ?? "-")  GPU avg \(th.gpu.map { String(format: "%.1f", $0) } ?? "-")")
     exit(0)
@@ -67,7 +70,7 @@ while !stopping {
   switch config.mode {
   case .auto: percent = -1
   case .max: percent = 100
-  case .curve: percent = hot == nil ? -1 : Swift.min(Swift.max(config.percent(at: temp), 0), 100)
+  case .curve: percent = hot == nil ? -1 : config.percent(at: temp)
   }
   if config.mode != .auto, temp >= config.safetyCelsius { percent = 100 }
 
@@ -86,8 +89,12 @@ while !stopping {
       // Write only on change, so an unchanged curve costs no SMC writes.
       // The read-back also catches macOS taking the fan back.
       do {
-        if !fan.manual { try smc.setFanManual(i, true) }
-        if !fan.manual || abs(fan.target - rpm) >= 1 { try smc.setFanTarget(i, rpm: rpm) }
+        if !fan.manual {
+          try smc.setFanManual(i, true)
+          try smc.setFanTarget(i, rpm: rpm)
+        } else if abs(fan.target - rpm) >= 1 {
+          try smc.setFanTarget(i, rpm: rpm)
+        }
       } catch {
         log("fan \(i): \(error.localizedDescription)")
       }
@@ -99,7 +106,6 @@ while !stopping {
     }
   }
   lastMode = percent < 0 ? .auto : config.mode
-  if percent < 0 { loggedPercent = -1 }
 
   let status = DaemonStatus(
     updatedAt: Date().timeIntervalSince1970, mode: percent < 0 ? .auto : config.mode,

@@ -78,6 +78,12 @@ final class FanConfigTests: XCTestCase {
     XCTAssertEqual(c.percent(at: 90), 100)
   }
 
+  func testClampsOutOfRangePoints() {
+    let c = FanConfig(points: [CurvePoint(celsius: 40, percent: -10), CurvePoint(celsius: 80, percent: 150)])
+    XCTAssertEqual(c.percent(at: 30), 0)
+    XCTAssertEqual(c.percent(at: 90), 100)
+  }
+
   func testUnsortedPointsWork() {
     let c = FanConfig(points: [CurvePoint(celsius: 80, percent: 100), CurvePoint(celsius: 40, percent: 20)])
     XCTAssertEqual(c.percent(at: 60), 60)
