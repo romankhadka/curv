@@ -38,7 +38,7 @@ struct MenuBarMenu: View {
     ForEach(model.fans) { fan in
       Text("Fan \(fan.id): \(Int(fan.actual)) rpm")
     }
-    Text(model.helperSummary)
+    Text("Helper: \(model.helperStatus)")
 
     Divider()
 

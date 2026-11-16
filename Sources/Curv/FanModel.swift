@@ -1,6 +1,10 @@
 import Foundation
 import SMCKit
 
+enum HelperState {
+  case notInstalled, needsApproval, notLoaded, loaded, running
+}
+
 @MainActor
 final class FanModel: ObservableObject {
   @Published var config: FanConfig {
@@ -11,6 +15,7 @@ final class FanModel: ObservableObject {
   @Published var helperInstalled = false
   @Published var helperLoaded = false
   @Published var helperOutdated = false
+  @Published var helperNeedsApproval = false
   @Published var daemon: DaemonStatus?
   @Published var lastError: String?
   @Published var smcAvailable = true
@@ -49,14 +54,27 @@ final class FanModel: ObservableObject {
     helperInstalled = Helper.isInstalled()
     helperLoaded = helperInstalled && Helper.isLoaded()
     helperOutdated = Helper.installedMatchesBundle() == false
+    helperNeedsApproval = helperInstalled && !helperLoaded && Helper.needsApproval()
   }
 
-  var helperSummary: String {
-    if !helperInstalled { return "Helper not installed" }
-    if helperOutdated { return daemonAlive ? "Helper running, update available" : "Helper installed, update available" }
-    if daemonAlive { return "Helper running" }
-    if helperLoaded { return "Helper loaded, waiting for first report" }
-    return "Helper installed, not running"
+  var helperState: HelperState {
+    if !helperInstalled { return .notInstalled }
+    if daemonAlive { return .running }
+    if helperLoaded { return .loaded }
+    return helperNeedsApproval ? .needsApproval : .notLoaded
+  }
+
+  /// Short status for the window, the menu bar menu and Settings.
+  var helperStatus: String {
+    let base: String
+    switch helperState {
+    case .notInstalled: return "Not installed. Fans stay under macOS control."
+    case .needsApproval: base = "Blocked by macOS"
+    case .notLoaded: base = "Installed, not running"
+    case .loaded: base = "Loaded, waiting for first report"
+    case .running: base = "Running"
+    }
+    return helperOutdated ? "\(base) · this app has a newer helper" : base
   }
 
   private func scheduleSave() {
@@ -106,6 +124,9 @@ final class FanModel: ObservableObject {
 
   // MARK: Helper
 
+  static let approvalHint =
+    "macOS blocks the helper. In Login Items & Extensions, turn on \"Allow in the Background\" for com.romn.fancurved, then click Restart."
+
   func installHelper() {
     do {
       try config.save(to: configURL)
@@ -115,6 +136,8 @@ final class FanModel: ObservableObject {
       lastError = error.localizedDescription
     }
     refreshHelper()
+    // The approval hint replaces launchctl's raw bootstrap error.
+    if helperState == .needsApproval { lastError = nil }
   }
 
   func uninstallHelper() {
@@ -128,6 +151,11 @@ final class FanModel: ObservableObject {
   }
 
   func restartHelper() {
+    if Helper.needsApproval() {
+      Helper.openLoginItems()
+      refreshHelper()
+      return
+    }
     do {
       try Helper.restart()
       lastError = nil

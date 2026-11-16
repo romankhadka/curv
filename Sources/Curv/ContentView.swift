@@ -111,15 +111,21 @@ struct ContentView: View {
       VStack(alignment: .leading, spacing: 6) {
         HStack {
           Circle().fill(statusColor).frame(width: 10, height: 10)
-          Text(statusText)
+          Text(model.helperStatus)
           Spacer()
           if model.helperInstalled {
             if model.helperOutdated { Button("Update helper…") { model.installHelper() } }
+            if model.helperState == .needsApproval { Button("Open Login Items…") { Helper.openLoginItems() } }
             Button("Restart") { model.restartHelper() }
             Button("Uninstall", role: .destructive) { model.uninstallHelper() }
           } else {
             Button("Install…") { model.installHelper() }
           }
+        }
+        if model.helperState == .needsApproval {
+          Text(FanModel.approvalHint)
+            .font(.caption).foregroundStyle(.red)
+            .fixedSize(horizontal: false, vertical: true)
         }
         if let d = model.daemon, model.daemonAlive {
           Text("Applied \(Int(d.percent))% at \(Temperature.format(d.celsius, fahrenheit: fahrenheit)) (\(d.sensor)) · \(d.mode.label) · targets \(d.targets.map { String(Int($0)) }.joined(separator: ", ")) rpm")
@@ -133,15 +139,13 @@ struct ContentView: View {
     }
   }
 
-  private var statusText: String {
-    if !model.helperInstalled { return "Not installed. Fans stay under macOS control." }
-    let base = model.daemonAlive ? "Running" : model.helperLoaded ? "Loaded, waiting for first report" : "Installed, not running"
-    return model.helperOutdated ? "\(base) · this app has a newer helper" : base
-  }
-
   private var statusColor: Color {
-    if !model.helperInstalled { return .gray }
-    if model.helperOutdated { return .yellow }
-    return model.daemonAlive ? .green : .orange
+    switch model.helperState {
+    case .notInstalled: return .gray
+    case .needsApproval: return .red
+    case _ where model.helperOutdated: return .yellow
+    case .running: return .green
+    case .notLoaded, .loaded: return .orange
+    }
   }
 }
