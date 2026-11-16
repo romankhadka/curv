@@ -62,6 +62,7 @@ final class FanModel: ObservableObject {
     helperLoaded = helperInstalled && (daemonAlive || Helper.isLoaded())
     helperNeedsApproval = helperInstalled && !helperLoaded && Helper.needsApproval()
     // Read and compare both binaries only when the installed one changed.
+    // The bundled one is fixed while the app runs.
     let stamp = Helper.installedStamp()
     if stamp != checkedDaemonStamp {
       checkedDaemonStamp = stamp
