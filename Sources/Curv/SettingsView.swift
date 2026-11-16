@@ -118,7 +118,7 @@ struct HelperSettings: View {
   var body: some View {
     Form {
       Section("Status") {
-        LabeledContent("Helper", value: model.helperSummary)
+        LabeledContent("Helper", value: model.helperStatus)
         if let d = model.daemon, model.daemonAlive {
           LabeledContent("Last applied", value: d.mode == .auto
             ? "Automatic control at \(Temperature.format(d.celsius))"
@@ -127,7 +127,7 @@ struct HelperSettings: View {
         HStack {
           if model.helperInstalled {
             if model.helperOutdated { Button("Update helper…") { model.installHelper() } }
-            if model.helperNeedsApproval { Button("Open Login Items…") { Helper.openLoginItems() } }
+            if model.helperState == .needsApproval { Button("Open Login Items…") { Helper.openLoginItems() } }
             Button("Restart") { model.restartHelper() }
             Button("Uninstall…", role: .destructive) { model.uninstallHelper() }
           } else {

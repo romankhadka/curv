@@ -30,7 +30,7 @@ enum Helper {
   /// System Settings > General > Login Items & Extensions. launchd then skips
   /// the daemon at boot and refuses to bootstrap it.
   static func needsApproval() -> Bool {
-    isInstalled() && SMAppService.statusForLegacyPlist(at: URL(fileURLWithPath: plist)) == .requiresApproval
+    SMAppService.statusForLegacyPlist(at: URL(fileURLWithPath: plist)) == .requiresApproval
   }
 
   static func openLoginItems() { SMAppService.openSystemSettingsLoginItems() }
@@ -87,13 +87,10 @@ enum Helper {
     try runPrivileged("launchctl bootout system/\(label) 2>/dev/null || true; rm -f \(q(plist)) \(q(binary))")
   }
 
+  /// kickstart needs a loaded service. After a reboot with the daemon
+  /// disallowed, or after a manual bootout, load it instead.
   static func restart() throws {
-    // kickstart needs a loaded service. After a reboot with the daemon
-    // disallowed, or after a manual bootout, load it instead.
-    try runPrivileged(
-      "if launchctl print system/\(label) >/dev/null 2>&1; then launchctl kickstart -k system/\(label); "
-        + "else launchctl bootstrap system \(q(plist)); fi"
-    )
+    try runPrivileged(isLoaded() ? "launchctl kickstart -k system/\(label)" : "launchctl bootstrap system \(q(plist))")
   }
 
   // MARK: Plumbing
