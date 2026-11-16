@@ -35,6 +35,14 @@ enum Helper {
 
   static func openLoginItems() { SMAppService.openSystemSettingsLoginItems() }
 
+  /// Size and modification date of the installed daemon: changes on every
+  /// install. nil when it is missing.
+  static func installedStamp() -> String? {
+    guard let a = try? FileManager.default.attributesOfItem(atPath: binary),
+          let size = a[.size] as? Int, let date = a[.modificationDate] as? Date else { return nil }
+    return "\(size)-\(date.timeIntervalSince1970)"
+  }
+
   /// nil when nothing is installed or the bundled daemon cannot be read.
   static func installedMatchesBundle() -> Bool? {
     guard isInstalled(), let source = bundledDaemon,

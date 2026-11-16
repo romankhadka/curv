@@ -28,6 +28,8 @@ final class FanModel: ObservableObject {
   private var timer: Timer?
   private var saveTask: Task<Void, Never>?
   private var tick = 0
+  /// Size and date of the installed daemon when `helperOutdated` was last computed.
+  private var checkedDaemonStamp: String?
 
   init() {
     config = (try? FanConfig.load(from: configURL)) ?? FanConfig()
@@ -52,11 +54,20 @@ final class FanModel: ObservableObject {
     if tick % 5 == 0 { refreshHelper() }
   }
 
+  /// Runs every 5 s on the main actor, so it skips work whose answer cannot
+  /// have changed.
   func refreshHelper() {
     helperInstalled = Helper.isInstalled()
-    helperLoaded = helperInstalled && Helper.isLoaded()
-    helperOutdated = Helper.installedMatchesBundle() == false
+    // A fresh status report proves the daemon is loaded: no launchctl spawn.
+    helperLoaded = helperInstalled && (daemonAlive || Helper.isLoaded())
     helperNeedsApproval = helperInstalled && !helperLoaded && Helper.needsApproval()
+    // Read and compare both binaries only when the installed one changed.
+    // The bundled one is fixed while the app runs.
+    let stamp = Helper.installedStamp()
+    if stamp != checkedDaemonStamp {
+      checkedDaemonStamp = stamp
+      helperOutdated = Helper.installedMatchesBundle() == false
+    }
   }
 
   var helperState: HelperState {
