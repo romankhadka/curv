@@ -89,8 +89,13 @@ public struct FanConfig: Codable, Equatable {
     CurvePoint(celsius: 65, percent: 85), CurvePoint(celsius: 75, percent: 100),
   ]
 
-  /// Linear interpolation between points, flat beyond the ends.
+  /// Linear interpolation between points, flat beyond the ends, clamped to
+  /// 0–100 so a hand-edited config cannot ask for more than a fan's maximum.
   public func percent(at celsius: Double) -> Double {
+    Swift.min(Swift.max(interpolated(at: celsius), 0), 100)
+  }
+
+  private func interpolated(at celsius: Double) -> Double {
     let pts = points.sorted { $0.celsius < $1.celsius }
     guard let first = pts.first, let last = pts.last else { return 100 }
     if celsius <= first.celsius { return first.percent }
@@ -140,7 +145,9 @@ public struct DaemonStatus: Codable {
     self.targets = targets
   }
 
-  public var isFresh: Bool { Date().timeIntervalSince1970 - updatedAt < 10 }
+  /// The daemon writes every 1–10 s, so 25 s covers its slowest interval
+  /// plus a missed tick.
+  public var isFresh: Bool { Date().timeIntervalSince1970 - updatedAt < 25 }
 
   public static func load() -> DaemonStatus? {
     guard let data = FileManager.default.contents(atPath: path) else { return nil }

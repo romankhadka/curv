@@ -13,6 +13,7 @@ let package = Package(
       dependencies: ["SMCKit"],
       linkerSettings: [.linkedFramework("AppKit"), .linkedFramework("SwiftUI")]
     ),
+    .testTarget(name: "SMCKitTests", dependencies: ["SMCKit"]),
   ],
   swiftLanguageModes: [.v5]
 )

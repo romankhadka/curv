@@ -49,8 +49,8 @@ open build/Curv.app
 
 ## How it works
 
-- **Curv.app** reads fan RPM and every SMC temperature key. Reads need no
-  privileges. It saves your curve to
+- **Curv.app** reads fan RPM and the CPU-die and GPU temperature keys. Reads
+  need no privileges. It saves your curve to
   `~/Library/Application Support/FanCurve/config.json` as you edit.
 - **fancurved** is a LaunchDaemon that runs as root. Every 2 seconds (adjustable
   in Settings) it reads that file, averages the CPU-die keys (`Tp*`) and the
@@ -65,8 +65,15 @@ open build/Curv.app
   reinstalls it with one password prompt.
 
 Single core sensors on Apple Silicon spike far above the package temperature
-under load, so the curve is driven by averages, not by the hottest key. List
-every key with:
+under load, so the curve is driven by averages, not by the hottest key.
+
+The averages skip invalid readings. Power-gated cores report exactly 40.0 °C,
+and in some samples every `Tp*` key reads 40.0 or about 5 °C. When a sample has
+no valid key, the last value holds for up to 30 seconds. Rises then pass through
+within seconds, and falls take about 20 seconds, so short pauses between bursts
+of load do not make the fans hunt.
+
+List every key with:
 
 ```sh
 .build/release/fancurved --sensors
